@@ -10,12 +10,12 @@ require "./holdem/enums/rank.cr"
 # puts(rodrigo.hand[0].number)
 def createPlayers(q, money)
     players = [] of Player
-
+    players.push(Player.new(money, true))
     while q > 0
-        players.push(Player.new(money))
+        players.push(Player.new(money, false))
         q -= 1
     end
-    return players
+    return players.shuffle
 end
 
 def createDeck()
@@ -35,11 +35,16 @@ end
 
 def startGame(qtOponentes, dificuldade, money)
     players = createPlayers(qtOponentes, money)
+    deck = createDeck
+    p! deck
+    # table = [] of Card
 
-    shuffle
-    puts players
-    table = new table(players)
 
 end
 
 
+# startGame(3, 0, 200)
+carta = Card.new(Suit.new(2), 11)
+jogador = Player.new(200, true)
+jogador.setHand(createDeck)
+puts jogador.getReadableHand

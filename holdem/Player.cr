@@ -5,6 +5,9 @@
 #```
 class Player
     # mão   
+    def isPlayer
+        @isPlayer
+    end
     def hand
         @hand
     end
@@ -14,9 +17,10 @@ class Player
     end
 
     #cria um jogador sem cartas
-    def initialize(dinheiro = Int32)
+    def initialize(dinheiro : Int32, isPlayer : Bool)
         @hand = [] of Card
         @dinheiro = dinheiro
+        @isPlayer = isPlayer
     end
 
     #dá uma carta específica para o jogador
@@ -43,5 +47,21 @@ class Player
             if @hand.includes?(card)
                 @hand.delete(card)
             end
+    end
+
+    def setHand(arr : Array) 
+        @hand = arr
+    end
+
+    def getHand
+        return @hand
+    end
+
+    def getReadableHand
+        saida = [] of String
+        @hand.each do |card|
+            saida.push(RANK[card.getRank] + " de " + card.getSuit.to_s())
+        end
+        return saida
     end
 end

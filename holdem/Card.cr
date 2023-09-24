@@ -20,4 +20,11 @@ class Card
         @rank
     end
 
+    def getSuit
+        return @suit
+    end
+    def getRank
+        return @rank
+    end
+
 end
