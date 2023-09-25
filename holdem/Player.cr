@@ -5,40 +5,19 @@
 #```
 class Player
     # mão   
-    def isPlayer
-        @isPlayer
-    end
-    def hand
-        @hand
-    end
-
-    def dinheiro
-        @dinheiro
-    end
+    property isPlayer : Bool
+    property hand : Array(Card)
+    property dinheiro = 100
 
     #cria um jogador sem cartas
-    def initialize(dinheiro : Int32, isPlayer : Bool)
+    def initialize(isPlayer : Bool)
         @hand = [] of Card
-        @dinheiro = dinheiro
         @isPlayer = isPlayer
     end
 
     #dá uma carta específica para o jogador
     def give_card(card : Card)
         @hand << card
-    end
-
-
-    # TODO
-    def fold
-    end
-
-    #TODO
-    def call
-    end
-
-    #TODO
-    def raise
     end
 
 
@@ -49,18 +28,14 @@ class Player
             end
     end
 
-    def setHand(arr : Array) 
-        @hand = arr
-    end
-
     def getHand
         return @hand
     end
 
-    def getReadableHand
+    def showHand
         saida = [] of String
         @hand.each do |card|
-            saida.push(RANK[card.getRank] + " de " + card.getSuit.to_s())
+            saida << RANK[card.getRank] + " de " + card.getSuit.to_s()
         end
         return saida
     end
