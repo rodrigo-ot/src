@@ -23,6 +23,7 @@ class Card
     def getSuit
         return @suit
     end
+    
     def getRank
         return @rank
     end
