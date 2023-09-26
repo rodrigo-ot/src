@@ -12,6 +12,14 @@ class Player
     property name : String
 
 
+    def getMoney()
+        return @money
+    end
+
+    def getBet()
+        return @bet
+    end
+
     def function : Function
         @function
     end
@@ -53,12 +61,23 @@ class Player
         return @function
     end
 
+    def getInfo()
+        return "Sua aposta: " + @bet.to_s + " / Seu saldo: " + @money.to_s + " / Suas cartas: " + showHand.to_s
+    end
+
+
     def doBet(aposta : Int32)
-        if aposta <= @money
-            @bet = aposta
+        begin
+            if aposta <= @money
+                @bet = aposta
+                @money -= aposta
+                puts(getName()+" realizou a aposta: "+(aposta).to_s+"\n")
             return aposta
-        else
-            puts("Não tem dinheiro suficiente! Tentativa: "+aposta.to_s()+" Saldo disponivel: "+@money.to_s())
+            else
+                raise Exception.new("Não tem dinheiro suficiente! Tentativa: "+aposta.to_s()+" Saldo disponivel: "+@money.to_s())
+            end
+        rescue excecao
+            puts "#{excecao.message}"
         end
         return -1
     end
