@@ -28,4 +28,5 @@ class Card
         return @rank
     end
 
+    def_clone
 end

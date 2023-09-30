@@ -1,14 +1,3 @@
-#Fator RH:
-#V = jarValue / (decisionsBetRaise + 1) * contRemainingPlayers * contDontChooseRun * (contDecisionRaise + 1)
-#T = 1
-#Porcentagem de decisões que vão ser tomadas:
-#D1(Fugir) se V < T
-#D2(Continuar no Jogo) se T <= V < 20 * T
-#D3(Aumentar Pouco) se 20 * T <= V < 50 * T
-#D4(Aumentar Médio) se 50 * T <= V < 100 * T
-#D5(Aumentar Muito) se 100 * T <= V < 1000 * T
-#D6(Aumentar Tudo) se V >= 1000 * T
-
 class PlayerBot < Player
     T = 1
     
@@ -50,4 +39,48 @@ class PlayerBot < Player
             return 6
         end
     end
+
+    def choose_best_cards(community_cards : Array(Card))
+        best_cards = [] of Card # Inicializa um array para as melhores cartas
+        
+        # Classifica as cartas da mesa comunitária
+        community_cards = community_cards.sort_by { |card| card.getRank }
+      
+        # Verifica se há pares, trincas ou quadras na mesa
+        ranks_count = Hash(Int32, Int32).new(0)
+      
+        community_cards.each do |card|
+          ranks_count[card.getRank] += 1
+        end
+      
+        # Verifica se há pares, trincas ou quadras na mão do bot
+        bot_ranks_count = Hash(Int32, Int32).new(0)
+      
+        @hand.each do |card|
+          bot_ranks_count[card.getRank] += 1
+        end
+      
+        # Escolhe as cartas da mesa que podem formar pares, trincas ou quadras
+        community_cards.each do |card|
+          if ranks_count[card.getRank] > 1 && bot_ranks_count[card.getRank] < 2
+            best_cards << card
+          end
+        end
+      
+        # Escolhe as cartas da mesa que podem formar um flush
+        suit_count = Hash(Suit, Int32).new(0)
+      
+        community_cards.each do |card|
+          suit_count[card.getSuit] += 1
+        end
+      
+        suit_count.each do |suit, count|
+          if count >= 3 # Bot precisa de pelo menos três cartas do mesmo naipe para formar um flush
+            flush_cards = community_cards.select { |card| card.getSuit == suit }
+            best_cards.concat(flush_cards)
+          end
+        end
+      
+        return best_cards
+      end
 end

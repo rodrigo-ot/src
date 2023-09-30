@@ -5,31 +5,34 @@
 class PokerGame
     property apostaMinima : Int32
     property deck : Array(Card)
+    property totalPlayers : Array(Player)
     property players : Array(Player)
     property jar : Int32
     property communityCards : Array(Card)
     property maiorAposta = 0
 
-    @@contDecisionsBetRaise = 1
-    @@contRemainingPlayers = 1
-    @@contDontChooseFold = 1
-    @@contRaise = 1
+    @@firstMatch = true
+    @@terminaJogo = false
+    @@contDecisionsBetRaise = 0
+    @@contRemainingPlayers = 0
+    @@contDontChooseFold = 0
+    @@contRaise = 0
 
     def updateRemainingPlayers
         contRemainingPlayers = @players.size
     end
 
-
     def initialize(players : Int32, min : Int32)
         @apostaMinima = min
         @jar = 0
         @deck = createDeck
+        @totalPlayers = [] of Player
         @players = [] of Player
         @communityCards = [] of Card
-        @players << Player.new(true, "Jogador")
+        @totalPlayers << Player.new(true, "Jogador")
         #adiciona os bot
         players.times do |i|
-            @players << PlayerBot.new(false, "Bot "+ i.to_s)
+            @totalPlayers << PlayerBot.new(false, "Bot "+ i.to_s)
         end
     end
 
@@ -61,31 +64,45 @@ class PokerGame
     end
 
     def setDealer()
-        puts("Definir papeis")
-        #entrega cartas para fazer comparacoes
-        deliverCard()
+        unless @@firstMatch
+            
+            dealer = getDealer
+            smallBlind = getSmallBlind
+            
+            dealer.setFunction(Function::Player)
+            smallBlind.setFunction(Function::Dealer)
+            puts(smallBlind.getName+" é o Dealer desta rodada.\n")
+            indice = @players.index {|player| player.getFunction == Function::Dealer}
+            @players.rotate!(indice.to_s.to_i)
+            
+        else
+            puts("Definir papeis")
+            #entrega cartas para fazer comparacoes
+            deliverCard()
 
-        #dummy
-        maior = Player.new(false,"dummy")
-        maior.hand << Card.new(Suit.new(0), 0)
+            #dummy
+            maior = Player.new(false,"dummy")
+            maior.hand << Card.new(Suit.new(0), 0)
 
-        # compara quem tirou a maior carta
-        @players.each do |player|
-            if player.hand[0].getRank > maior.hand[0].getRank
-                maior = player
+            # compara quem tirou a maior carta
+            @players.each do |player|
+                if player.hand[0].getRank > maior.hand[0].getRank
+                    maior = player
+                end
             end
+            #define quem é o dealer
+            maior.setFunction(Function::Dealer)
+            puts(maior.getName+" é o Dealer desta rodada.\n")
+
+            # devolve as cartas pro deck
+            retrieveCards()
+            deck.shuffle
+
+            #organiza o array pro dealer ficar no indice 0
+            indice = @players.index {|player| player.getFunction == Function::Dealer}
+            @players.rotate!(indice.to_s.to_i)
+            @@firstMatch = false
         end
-        #define quem é o dealer
-        maior.setFunction(Function::Dealer)
-        puts(maior.getName+" é o Dealer desta rodada.\n")
-
-        # devolve as cartas pro deck
-        retrieveCards()
-        deck.shuffle
-
-        #organiza o array pro dealer ficar no indice 0
-        indice = @players.index {|player| player.getFunction == Function::Dealer}
-        @players.rotate!(indice.to_s.to_i)
     end
 
     def getDealer()
@@ -94,19 +111,27 @@ class PokerGame
                 return player
             end
         end
+        return @players[0]
     end
 
-    def setBlinds()
+    def setSmallBlind()
         dealerIndex = @players.index {|player| player.getFunction == Function::Dealer}
         if dealerIndex.to_s.to_i + 1 < @players.size
             @players[dealerIndex.to_s.to_i+1].setFunction(Function::SmallBlind)
             puts(@players[dealerIndex.to_s.to_i+1].getName+" é o SmallBlind desta rodada.\n")
         end
+    end
+
+    
+
+    def setBigBlind()
+        dealerIndex = @players.index {|player| player.getFunction == Function::Dealer}
         if dealerIndex.to_s.to_i + 2 < @players.size
             @players[dealerIndex.to_s.to_i+2].setFunction(Function::BigBlind)
             puts(@players[dealerIndex.to_s.to_i+2].getName+" é o BigBlind desta rodada.\n")
         end
     end
+
 
     def getSmallBlind
         @players.each do |player|
@@ -114,6 +139,7 @@ class PokerGame
                 return player
             end
         end
+        return @players[0]
     end
 
     def getBigBlind
@@ -122,6 +148,7 @@ class PokerGame
                 return player
             end
         end
+        return @players[0]
     end
 
     def deliverCard()
@@ -245,6 +272,7 @@ class PokerGame
 
             else
                 #logica do bot
+                #os bots estao apostando mesmo sem ter dinheiro
                 decisao = player.chooseAction(@jar,@@contDecisionsBetRaise, @@contRemainingPlayers, @@contDontChooseFold, @@contRaise)
                 case decisao
                 when 1
@@ -298,14 +326,24 @@ class PokerGame
         rodadaApostas(true,true,true,false)
     end
 
-    def showCommunityCards
+    def showCommunityCards(escolher : Bool = false)
         saida = [] of String
+        cont = 1
         @communityCards.each do |card|
-            saida << RANK[card.getRank] + " de " + card.getSuit.to_s()
+            if escolher
+                saida << cont.to_s + ":" + RANK[card.getRank] + " de " + card.getSuit.to_s()
+                cont += 1
+            else
+                saida << RANK[card.getRank] + " de " + card.getSuit.to_s()
+            end
+
         end
         return saida
     end
 
+    def getCommunityCards
+        return @communityCards
+    end
 
     def flop()
         puts "Flop:"
@@ -335,32 +373,75 @@ class PokerGame
         rodadaApostas(true,true,true,true)
     end
 
-    def showDown()
-        puts "Showdown:"
-
-        
-        # Mostra as cartas de cada jogador
-        @players.each do |player|
-            puts(player.getName+"Tem as cartas: "+player.showHand.to_s+showCommunityCards.to_s)
+    def find_winner() : Player
+        winning_player = @players[0] # Inicializa com o primeiro jogador
+        best_hand = @players[0].classify_hand() # Classifica a mão do primeiro jogador
+      
+        @players[1..-1].each do |player|
+          player_hand = player.classify_hand()
+          if player_hand["value"].to_i > best_hand["value"].to_i ||
+             (player_hand["value"].to_i == best_hand["value"].to_i && player_hand["rank"].to_i > best_hand["rank"].to_i)
+            winning_player = player
+            best_hand = player_hand
+          end
         end
-        
-        # Lógica para determinar o vencedor
-        # Implemente sua lógica aqui com base nas combinações de cartas
-        
-        # Exemplo: Vencedor é o jogador com a maior carta mais 
+      
+        return winning_player
+      end
+
+      def chooseCards()
         
     end
 
+    def showDown()
+        #todo: adicionar verificação se o jogador nao foldou hurdur
+        puts "Showdown:"
+        puts "Escolha suas cartas:"
+        playerJogadorHumano = @players.find { |p| p.is_Player}
+        a = 3
+        while a > 0                                    
+            puts showCommunityCards(true)
+            carta = gets
+            
+            if playerJogadorHumano
+                playerJogadorHumano.give_card(@communityCards[carta.to_s.to_i - 1])
+            end
+            a -= 1
+        end
+
+        @players.each do |player|
+            if player.is_a?(PlayerBot)
+                cartas = player.choose_best_cards(getCommunityCards)
+                player.hand = player.hand + cartas
+            end
+            puts player.getName + ": " +player.showHand.to_s + player.classify_hand["hand"].to_s
+        end
+
+        winner = find_winner
+        winner.setMoney(@jar + winner.getMoney)
+        puts(winner.getName+" venceu esta rodada.")
+        puts("continua? s para sim, qualquer coisa para nao")
+        continue = gets == "s" ? false : true
+        @@terminaJogo = continue
+    end
+    
     def startGame()
-        @deck = createDeck.shuffle
-        setDealer
-        setBlinds
-        blinds
-        preFlop
-        flop
-        turn
-        river
-        showDown
+        while true
+            @jar = 0
+            @deck = createDeck.shuffle
+            @players = @totalPlayers.clone
+            setDealer
+            setSmallBlind
+            setBigBlind
+            blinds
+            preFlop
+            flop
+            turn
+            river
+            showDown
+            if @@terminaJogo
+                break 
+            end
+        end
     end
-
 end
