@@ -221,92 +221,135 @@ class PokerGame
                 #trata comando
                 while true
                     begin
-                        case playerOption
-                        when "1" #call
-                            if bCall == false
-                                next
-                            end
-                            player.doBet(maiorAposta)
-                            addToJar(maiorAposta)
-                            @@contDecisionsBetRaise += 1
-                            @@contDontChooseFold += 1
-                            
-                        when "2" #raise
-                            if bRaise == false
-                                next
-                            end
-                            puts("Em quanto deseja aumentar? / Saldo:"+player.getMoney.to_s+"/ Maior Aposta:"+maiorAposta.to_s)
-                            pRaise = gets()
-                            setMaiorAposta(pRaise.to_s.to_i + maiorAposta)
-                            player.doBet(pRaise.to_s.to_i + maiorAposta)
-                            addToJar(pRaise.to_s.to_i + maiorAposta)
-                            @@contDecisionsBetRaise += 1
-                            @@contDontChooseFold +=1
-                            @@contRaise = pRaise.to_s.to_i
-                            
-                            # puts(player.getName+" Aumentou a aposta para:"+(pRaise.to_s.to_i + maiorAposta).to_s)
-                        when "3" #fold
-                            if bFold == false
-                                next
-                            end
-                            @players.delete(player)
-                            puts(player.getName+" Desistiu da rodada.\n")
-                        when "4" #check
-                            if bCheck == false
-                                next
-                            end
-                            puts(player.getName+" Pulou a vez.\n")
-                            @@contRemainingPlayers = @players.size
-                            @@contDontChooseFold += 1
-                            break
-                        else
-                            raise Exception.new("Comando inválido")
+                      case playerOption
+                      when "1" # Call
+                        if !bCall
+                          next
                         end
-                    rescue excecao
-                        puts "#{excecao.message}"
-                        playerOption = gets()
-                    else
+                        player.doBet(maiorAposta)
+                        addToJar(maiorAposta)
+                        @@contDecisionsBetRaise += 1
+                        @@contDontChooseFold += 1
+                  
+                      when "2" # Raise
+                        if !bRaise
+                          next
+                        end
+                        puts("Em quanto deseja aumentar? / Saldo: #{player.getMoney} / Maior Aposta: #{maiorAposta}")
+                        pRaise = gets.to_s.to_i
+                        if pRaise <= 0
+                          puts("Valor de aumento inválido. Tente novamente.")
+                          next
+                        end
+                        setMaiorAposta(pRaise + maiorAposta)
+                        player.doBet(pRaise + maiorAposta)
+                        addToJar(pRaise + maiorAposta)
+                        @@contDecisionsBetRaise += 1
+                        @@contDontChooseFold += 1
+                        @@contRaise = pRaise
+                  
+                      when "3" # Fold
+                        if !bFold
+                          next
+                        end
+                        @players.delete(player)
+                        puts("#{player.getName} Desistiu da rodada.\n")
+                  
+                      when "4" # Check
+                        if !bCheck
+                          next
+                        end
+                        puts("#{player.getName} Pulou a vez.\n")
+                        @@contRemainingPlayers = @players.size
+                        @@contDontChooseFold += 1
                         break
+                  
+                      else
+                        raise "Comando inválido"
+                      end
+                    rescue excecao
+                      puts "#{excecao.message}"
+                      playerOption = gets.to_s.to_i
+                    else
+                      break
                     end
-                end
+                  end
+                  
+                  
 
             else
                 #logica do bot
                 #os bots estao apostando mesmo sem ter dinheiro
-                decisao = player.chooseAction(@jar,@@contDecisionsBetRaise, @@contRemainingPlayers, @@contDontChooseFold, @@contRaise)
+                decisao = player.chooseAction(@jar, @@contDecisionsBetRaise, @@contRemainingPlayers, @@contDontChooseFold, @@contRaise)
                 case decisao
                 when 1
-                    @players.delete(player)
-                    puts(player.getName+" Desistiu da rodada.\n")
+                @players.delete(player)
+                puts(player.getName + " Desistiu da rodada.\n")
                 when 2
-                    puts(player.getName+" Pulou a vez.\n")
-                    @@contDontChooseFold +=1
-                    break
+                puts(player.getName + " Pulou a vez.\n")
+                @@contDontChooseFold += 1
                 when 3
+                if player.getMoney >= @apostaMinima
                     player.doBet(@apostaMinima)
                     addToJar(@apostaMinima)
                     @@contDecisionsBetRaise += 1
-                    @@contDontChooseFold +=1
+                    @@contDontChooseFold += 1
+                else
+                    # Lógica para lidar com o jogador sem dinheiro suficiente para a aposta mínima
+                    # Você pode implementar uma ação diferente aqui, como "Desistir" ou "All-in" dependendo das regras do jogo.
+                    puts(player.getName + " não tem dinheiro suficiente para a aposta mínima.")
+                    # Sugestão: Desistir
+                    @players.delete(player)
+                end
                 when 4
-                    player.doBet((@apostaMinima*1.25).to_i+@maiorAposta)
-                    setMaiorAposta((@apostaMinima*1.25).to_i+@maiorAposta)
-                    addToJar(@apostaMinima*1.25.to_i+@maiorAposta)
+                if player.getMoney >= ((@apostaMinima * 1.25).to_i + @maiorAposta)
+                    player.doBet((@apostaMinima * 1.25).to_i + @maiorAposta)
+                    setMaiorAposta((@apostaMinima * 1.25).to_i + @maiorAposta)
+                    addToJar((@apostaMinima * 1.25).to_i + @maiorAposta)
                     @@contDecisionsBetRaise += 1
-                    @@contDontChooseFold +=1
-                when 5
-                    player.doBet((@apostaMinima*1.5).to_i+@maiorAposta)
-                    setMaiorAposta((@apostaMinima*1.25).to_i+@maiorAposta)
-                    addToJar(@apostaMinima*1.5.to_i+@maiorAposta)
-                    @@contDecisionsBetRaise += 1
-                    @@contDontChooseFold +=1
-                when 6
+                    @@contDontChooseFold += 1
+                else
+                    # Lógica para lidar com o jogador sem dinheiro suficiente para a aposta desejada
+                    # Novamente, você pode implementar uma ação diferente aqui.
+                    puts(player.getName + " não tem dinheiro suficiente para a aposta desejada.")
+                    # Sugestão: Apostar o máximo que tem
                     player.doBet(player.getMoney)
                     setMaiorAposta(player.getMoney)
                     addToJar(player.getMoney)
                     @@contDecisionsBetRaise += 1
-                    @@contDontChooseFold +=1
+                end
+                when 5
+                if player.getMoney >= ((@apostaMinima * 1.5).to_i + @maiorAposta)
+                    player.doBet((@apostaMinima * 1.5).to_i + @maiorAposta)
+                    setMaiorAposta((@apostaMinima * 1.5).to_i + @maiorAposta)
+                    addToJar((@apostaMinima * 1.5).to_i + @maiorAposta)
+                    @@contDecisionsBetRaise += 1
+                    @@contDontChooseFold += 1
                 else
-                    puts("bug")
+                    # Lógica para lidar com o jogador sem dinheiro suficiente para a aposta desejada
+                    # Mais uma vez, você pode implementar uma ação diferente aqui.
+                    puts(player.getName + " não tem dinheiro suficiente para a aposta desejada.")
+                    # Sugestão: Apostar o máximo que tem
+                    player.doBet(player.getMoney)
+                    setMaiorAposta(player.getMoney)
+                    addToJar(player.getMoney)
+                    @@contDecisionsBetRaise += 1
+                end
+                when 6
+                if player.getMoney > 0
+                    player.doBet(player.getMoney)
+                    setMaiorAposta(player.getMoney)
+                    addToJar(player.getMoney)
+                    @@contDecisionsBetRaise += 1
+                    @@contDontChooseFold += 1
+                else
+                    # Lógica para lidar com o jogador sem dinheiro
+                    puts(player.getName + " não tem dinheiro para apostar.")
+                    # Sugestão: Desistir
+                    @players.delete(player)
+                end
+                else
+                puts("Bug: Decisão inválida")
                 end
             end
             @@contRemainingPlayers = @players.size - 1
@@ -395,18 +438,39 @@ class PokerGame
 
     def showDown()
         #todo: adicionar verificação se o jogador nao foldou hurdur
+        if @players.empty?
+            return true
+        end
         puts "Showdown:"
-        puts "Escolha suas cartas:"
-        playerJogadorHumano = @players.find { |p| p.is_Player}
-        a = 3
-        while a > 0                                    
-            puts showCommunityCards(true)
-            carta = gets
+        if @players.find { |p| p.is_Player }
+            puts "Escolha suas cartas:"
+            playerJogadorHumano = @players.find { |p| p.is_Player }
+            a = 3
+            selected_cards = [] of Card
             
-            if playerJogadorHumano
-                playerJogadorHumano.give_card(@communityCards[carta.to_s.to_i - 1])
+            while a > 0
+            puts showCommunityCards(true)
+            carta = gets.to_s.to_i
+            
+            # Verificar se a entrada do jogador é válida
+            if carta >= 1 && carta <= @communityCards.size
+                selected_card = @communityCards[carta - 1]
+                
+                # Verificar se a carta já foi escolhida
+                if !selected_cards.includes?(selected_card)
+                if playerJogadorHumano
+                    playerJogadorHumano.give_card(selected_card)
+                end
+                
+                selected_cards << selected_card
+                a -= 1
+                else
+                puts "Você já escolheu esta carta. Escolha outra."
+                end
+            else
+                puts "Opção inválida. Escolha um número entre 1 e #{@communityCards.size}"
             end
-            a -= 1
+            end
         end
 
         @players.each do |player|
@@ -414,7 +478,7 @@ class PokerGame
                 cartas = player.choose_best_cards(getCommunityCards)
                 player.hand = player.hand + cartas
             end
-            puts player.getName + ": " +player.showHand.to_s + player.classify_hand["hand"].to_s
+            puts player.getName + ": " +player.showHand.to_s + " - " + player.classify_hand["hand"].to_s
         end
 
         winner = find_winner
@@ -430,6 +494,7 @@ class PokerGame
             @jar = 0
             @deck = createDeck.shuffle
             @players = @totalPlayers.clone
+            @communityCards = [] of Card
             setDealer
             setSmallBlind
             setBigBlind
