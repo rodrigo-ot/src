@@ -1,1 +1,2 @@
-Projeto Texas Holdem para a disciplina de Paradigmas de Programação!
+demo
+https://youtu.be/RBW-o_Mpa3Q
